@@ -1,0 +1,45 @@
+db.sales.aggregate([
+  
+  {
+    $unwind: "$items"
+  },
+  
+  {
+    $addFields: {
+      year: { $year: "$date" },
+      month: { $month: "$date" },
+      revenue: { $multiply: ["$items.quantity", "$items.price"] }
+    }
+  },
+  
+  {
+    $group: {
+      _id: {
+        store: "$store",
+        year: "$year",
+        month: "$month"
+      },
+      totalRevenue: { $sum: "$revenue" },
+      averagePrice: { $avg: "$items.price" }
+    }
+  },
+ 
+  {
+    $sort: {
+      "_id.store": 1, 
+      "_id.year": 1, 
+      "_id.month": 1  
+    }
+  },
+  
+  {
+    $project: {
+      _id: 0, 
+      store: "$_id.store",
+     
+      month:{ $concat: [ { $toString: "$_id.month"}, "-", { $toString: "$_id.year"} ] }  ,
+      totalRevenue: 1,
+      averagePrice: 1
+    }
+  }
+])
